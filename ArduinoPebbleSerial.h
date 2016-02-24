@@ -7,7 +7,6 @@
 #define USE_HARDWARE_SERIAL 0
 
 #include <Arduino.h>
-#include "utility/OneWireSoftSerial.h"
 extern "C" {
 #include "utility/PebbleSerial.h"
 };
@@ -35,8 +34,6 @@ typedef enum {
 
 class ArduinoPebbleSerial {
 public:
-  static void begin_software(uint8_t pin, uint8_t *buffer, size_t length, Baud baud,
-                             const uint16_t *services, uint8_t num_services);
   static void begin_hardware(uint8_t *buffer, size_t length, Baud baud, const uint16_t *services,
                              uint8_t num_services);
   static bool feed(uint16_t *service_id, uint16_t *attribute_id, size_t *length, RequestType *type);

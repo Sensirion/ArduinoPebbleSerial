@@ -13,45 +13,28 @@ static uint8_t s_pin;
 static void prv_cmd_cb(SmartstrapCmd cmd, uint32_t arg) {
   switch (cmd) {
   case SmartstrapCmdSetBaudRate:
-    if (s_is_hardware) {
-      if (arg == 57600) {
-        // The Arduino library intentionally uses bad prescalers for a baud rate of exactly 57600 so
-        // we just increase it by 1 to prevent it from doing that.
-        arg++;
-      }
-      BOARD_SERIAL.begin(arg);
-      board_begin();
-    } else {
-      OneWireSoftSerial::begin(s_pin, arg);
+    if (arg == 57600) {
+      // The Arduino library intentionally uses bad prescalers for a baud rate of exactly 57600 so
+      // we just increase it by 1 to prevent it from doing that.
+      arg++;
     }
+    BOARD_SERIAL.begin(arg);
+    board_begin();
     break;
   case SmartstrapCmdSetTxEnabled:
-    if (s_is_hardware) {
-      if (!arg) {
-        BOARD_SERIAL.flush();
-      }
-      board_set_tx_enabled(arg);
-    } else {
-      OneWireSoftSerial::set_tx_enabled(arg);
-    }
+    if (!arg)
+      BOARD_SERIAL.flush();
+    board_set_tx_enabled(arg);
     break;
   case SmartstrapCmdWriteByte:
-    if (s_is_hardware) {
-      BOARD_SERIAL.write((uint8_t)arg);
-    } else {
-      OneWireSoftSerial::write((uint8_t)arg);
-    }
+    BOARD_SERIAL.write((uint8_t)arg);
     break;
   case SmartstrapCmdWriteBreak:
-    if (s_is_hardware) {
-      board_set_even_parity(true);
-      BOARD_SERIAL.write((uint8_t)0);
-      // need to flush before changing parity
-      BOARD_SERIAL.flush();
-      board_set_even_parity(false);
-    } else {
-      OneWireSoftSerial::write(0, true /* is_break */);
-    }
+    board_set_even_parity(true);
+    BOARD_SERIAL.write((uint8_t)0);
+    // need to flush before changing parity
+    BOARD_SERIAL.flush();
+    board_set_even_parity(false);
     break;
   default:
     break;
@@ -67,13 +50,6 @@ static void prv_begin(uint8_t *buffer, size_t length, Baud baud,
   pebble_prepare_for_read(s_buffer, s_buffer_length);
 }
 
-void ArduinoPebbleSerial::begin_software(uint8_t pin, uint8_t *buffer, size_t length, Baud baud,
-                                         const uint16_t *services, uint8_t num_services) {
-  s_is_hardware = false;
-  s_pin = pin;
-  prv_begin(buffer, length, baud, services, num_services);
-}
-
 void ArduinoPebbleSerial::begin_hardware(uint8_t *buffer, size_t length, Baud baud,
                                          const uint16_t *services, uint8_t num_services) {
   s_is_hardware = true;
@@ -81,19 +57,11 @@ void ArduinoPebbleSerial::begin_hardware(uint8_t *buffer, size_t length, Baud ba
 }
 
 static int prv_available_bytes(void) {
-  if (s_is_hardware) {
-    return BOARD_SERIAL.available();
-  } else {
-    return OneWireSoftSerial::available();
-  }
+  return BOARD_SERIAL.available();
 }
 
 static uint8_t prv_read_byte(void) {
-  if (s_is_hardware) {
-    return (uint8_t)BOARD_SERIAL.read();
-  } else {
-    return (uint8_t)OneWireSoftSerial::read();
-  }
+  return (uint8_t)BOARD_SERIAL.read();
 }
 
 bool ArduinoPebbleSerial::feed(uint16_t *service_id, uint16_t *attribute_id, size_t *length,
