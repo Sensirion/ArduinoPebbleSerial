@@ -79,6 +79,37 @@ static inline void board_set_even_parity(bool enabled) {
   }
 }
 
+
+#elif defined(__SAMD21G18A__)
+// as used in Arduino Zero
+#define BOARD_SERIAL Serial1
+
+static inline void board_begin(void) {
+}
+
+static inline void board_set_tx_enabled(bool enabled) {
+  // the TX and RX are tied together and we'll just drop any loopback frames
+  if (enabled) {
+    REG_SERCOM0_USART_CTRLB &= ~SERCOM_USART_CTRLB_RXEN;
+    // wait for bit to synchronize
+    // or next register command will be ignored
+    while(SERCOM0->USART.SYNCBUSY.bit.CTRLB);
+    REG_SERCOM0_USART_CTRLB |= SERCOM_USART_CTRLB_TXEN;
+    while(SERCOM0->USART.SYNCBUSY.bit.CTRLB);
+  } else {
+    REG_SERCOM0_USART_CTRLB &= ~SERCOM_USART_CTRLB_TXEN;
+    while(SERCOM0->USART.SYNCBUSY.bit.CTRLB);
+    REG_SERCOM0_USART_CTRLB |= SERCOM_USART_CTRLB_RXEN;
+    while(SERCOM0->USART.SYNCBUSY.bit.CTRLB);
+  }
+}
+
+// Parity Bit is locked, need to disable USART and set it again
+//CTRLA: Bit24-27: 0x0 = no parity, 0x1 = parity, Bit 27 reserved
+//CTRLB: Bit 13: 0x0 Even, 0x01 Odd
+static inline void board_set_even_parity(bool enabled) {
+}
+
 #else
 #error "Board not supported!"
 #endif
