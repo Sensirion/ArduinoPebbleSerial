@@ -39,14 +39,14 @@ static void prv_cmd_cb(SmartstrapCmd cmd, uint32_t arg) {
     BOARD_SERIAL.write((uint8_t)arg);
     break;
   case SmartstrapCmdWriteBreak:
+    // need to flush before changing parity
+    BOARD_SERIAL.flush();
+    board_set_even_parity(true);
     #ifdef __SAMD21G18A__
     // Ugly hack for 57kBaud, will be changed in the future
     BOARD_SERIAL.end();
     BOARD_SERIAL.begin(57600, SERIAL_8E1);
     #endif
-    // need to flush before changing parity
-    BOARD_SERIAL.flush();
-    board_set_even_parity(true);
 
     BOARD_SERIAL.write((uint8_t)0);
     // need to flush before changing parity
