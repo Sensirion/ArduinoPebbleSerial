@@ -17,16 +17,9 @@ static void prv_cmd_cb(SmartstrapCmd cmd, uint32_t arg) {
     if (arg == 57600) {
       // The Arduino library intentionally uses bad prescalers for a baud rate of exactly 57600 so
       // we just increase it by 1 to prevent it from doing that.
-
       arg++;
     }
     #endif
-    #ifdef __SAMD21G18A__
-    // for SAMD21 we need to disable SERIAL interface
-    // before enabling it again because of lock bits
-    BOARD_SERIAL.end();
-    #endif
-
     BOARD_SERIAL.begin(arg);
     board_begin();
     break;
@@ -42,20 +35,10 @@ static void prv_cmd_cb(SmartstrapCmd cmd, uint32_t arg) {
     // need to flush before changing parity
     BOARD_SERIAL.flush();
     board_set_even_parity(true);
-    #ifdef __SAMD21G18A__
-    // Ugly hack for 57kBaud, will be changed in the future
-    BOARD_SERIAL.end();
-    BOARD_SERIAL.begin(57600, SERIAL_8E1);
-    #endif
-
-    BOARD_SERIAL.write((uint8_t)0);
+    BOARD_SERIAL.write((uint8_t) 0);
     // need to flush before changing parity
     BOARD_SERIAL.flush();
     board_set_even_parity(false);
-    #ifdef __SAMD21G18A__
-    BOARD_SERIAL.end();
-    BOARD_SERIAL.begin(57600, SERIAL_8N1);
-    #endif
     break;
   default:
     break;

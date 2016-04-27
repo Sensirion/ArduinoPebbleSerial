@@ -90,16 +90,16 @@ static inline void board_begin(void) {
 static inline void board_set_tx_enabled(bool enabled) {
   // the TX and RX are tied together and we'll just drop any loopback frames
   if (enabled) {
-    REG_SERCOM0_USART_CTRLB &= ~SERCOM_USART_CTRLB_RXEN;
+    SERCOM0->USART.CTRLB.bit.RXEN = 0x0u;
     // wait for bit to synchronize
     // or next register command will be ignored
     while(SERCOM0->USART.SYNCBUSY.bit.CTRLB);
-    REG_SERCOM0_USART_CTRLB |= SERCOM_USART_CTRLB_TXEN;
+    SERCOM0->USART.CTRLB.bit.TXEN = 0x1u;
     while(SERCOM0->USART.SYNCBUSY.bit.CTRLB);
   } else {
-    REG_SERCOM0_USART_CTRLB &= ~SERCOM_USART_CTRLB_TXEN;
+    SERCOM0->USART.CTRLB.bit.TXEN = 0x0u;
     while(SERCOM0->USART.SYNCBUSY.bit.CTRLB);
-    REG_SERCOM0_USART_CTRLB |= SERCOM_USART_CTRLB_RXEN;
+    SERCOM0->USART.CTRLB.bit.RXEN = 0x1u;
     while(SERCOM0->USART.SYNCBUSY.bit.CTRLB);
   }
 }
@@ -108,7 +108,32 @@ static inline void board_set_tx_enabled(bool enabled) {
 //CTRLA: Bit24-27: 0x0 = no parity, 0x1 = parity, Bit 27 reserved
 //CTRLB: Bit 13: 0x0 Even, 0x01 Odd
 static inline void board_set_even_parity(bool enabled) {
+  //Disable UART to unlock Control Registers
+  SERCOM0->USART.CTRLA.bit.ENABLE = 0x0u;
+  //Wait for then enable bit from SYNCBUSY is equal to 0;
+  while(SERCOM0->USART.SYNCBUSY.bit.ENABLE);
+
+  if (enabled) {
+    //Setting the CTRLA register parity bit
+    SERCOM0->USART.CTRLA.reg |=	SERCOM_USART_CTRLA_FORM(0x1u);
+    //Setting the CTRLB register to even parity
+    SERCOM0->USART.CTRLB.reg &=	~((0x1u) << SERCOM_USART_CTRLB_PMODE_Pos);
+    while(SERCOM0->USART.SYNCBUSY.bit.CTRLB);
+  } else {
+    //Disabling parity bit in CTRLA register
+    SERCOM0->USART.CTRLA.reg &=	~(SERCOM_USART_CTRLA_FORM(0x1u));
+    //Setting the CTRLB register to even parity
+    SERCOM0->USART.CTRLB.reg &=	~((0x1u) << SERCOM_USART_CTRLB_PMODE_Pos);
+    while(SERCOM0->USART.SYNCBUSY.bit.CTRLB);
+  }
+  //SERCOM0->USART.INTFLAG.bit.TXC = 0x1u;
+  //Enable UART again
+  SERCOM0->USART.CTRLA.bit.ENABLE = 0x1u;
+  //Wait for then enable bit from SYNCBUSY is equal to 0;
+  while(SERCOM0->USART.SYNCBUSY.bit.ENABLE);
 }
+
+
 
 #else
 #error "Board not supported!"
